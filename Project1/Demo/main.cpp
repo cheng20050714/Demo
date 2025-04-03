@@ -21,6 +21,10 @@
 #include <algorithm>
 #include <iostream>
 
+#include <fstream>
+#include <map>
+#include <utility>
+
 
 //游戏中需要的资源变量
 Camera* camera = nullptr;
@@ -65,16 +69,25 @@ std::vector<Chicken*> chicken_list;
 int num_per_gen = 2;
 Timer timer_generate;  //僵尸鸡生成定时器
 Timer timer_increase_num_per_gen; //增加每次生成数量定时器
+Timer timer_auto_fire; // 自动开火定时器
 
 Vector2 pos_crosshair;
 double angle_barrel = 0; //炮管旋转角度
 const Vector2 pos_battery = { 640,600 }; //炮台基座中心位置
 const Vector2 pos_barrel = { 592,585 }; //炮管无旋转默认位置
-const SDL_FPoint center_barrel = { 48,25 }; //炮管旋转中心坐标
+const SDL_FPoint center_barrel = { 48,15 }; //炮管旋转中心坐标
 
-bool is_cool_down = true; //是否冷却结束
-bool is_fire_key_down = false;
+//bool is_cool_down = true; //是否冷却结束
+//bool is_fire_key_down = false;
 Animation animation_barrel_fire; //炮管开火动画
+
+std::map<std::string, std::string> word_dictionary; // 英文单词到中文释义的映射
+std::string current_word;               // 当前要拼写的单词
+std::string current_definition;         // 当前单词的中文释义
+std::string player_input;               // 玩家当前输入
+bool is_spelling_game_active = false;   // 拼写游戏是否激活
+int correct_letters = 0;                // 已正确输入的字母数
+Timer timer_spelling_game;
 
 //func：加载所有资源
 void load_resources() {
@@ -116,6 +129,21 @@ void load_resources() {
 
 	// 加载字体
 	font = TTF_OpenFont("../resources/IPix.ttf", 28);
+
+	//加载words_list
+	std::ifstream file("../resources/words_list.txt");
+	if (!file.is_open()) {
+		std::cerr << "无法打开单词文件！" << std::endl;
+		return;
+	}
+
+	std::string english, chinese;
+	while (std::getline(file, english)) {
+		if (std::getline(file, chinese)) {
+			word_dictionary[english] = chinese;
+		}
+	}
+	file.close();
 }
 
 
@@ -179,19 +207,50 @@ void init() {
 		}
 	});
 
-	timer_increase_num_per_gen.set_one_shot(false);
-	timer_increase_num_per_gen.set_wait_time(8.0f);
-	timer_increase_num_per_gen.set_on_timeout([&]()
-		{num_per_gen += 1; });
 
-	animation_barrel_fire.set_loop(false);
-	animation_barrel_fire.set_interval(0.04f);
-	animation_barrel_fire.set_center(center_barrel);
 	animation_barrel_fire.add_frame(&atlas_barrel_fire);
-	animation_barrel_fire.set_on_finished([&]()
-		{is_cool_down = true; });
-	animation_barrel_fire.set_position({ 780,610 });
+	animation_barrel_fire.set_position(pos_battery);
+	animation_barrel_fire.set_center(center_barrel);
+	animation_barrel_fire.set_interval(0.1f); 
 
+	// 设置自动开火定时器
+	timer_auto_fire.set_one_shot(false);
+	timer_auto_fire.set_wait_time(0.5f);
+	timer_auto_fire.set_on_timeout([&]() {
+		if (!chicken_list.empty()) {
+			// 找到最靠近边界的鸡
+			Chicken* target_chicken = *std::min_element(chicken_list.begin(), chicken_list.end(),
+				[](Chicken* a, Chicken* b) {
+					return a->get_position().y > b->get_position().y;
+				});
+
+			// 计算目标方向
+			Vector2 target_direction = target_chicken->get_position() - pos_battery;
+			angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
+
+			// 生成子弹
+			animation_barrel_fire.reset();
+
+			static const float length_barrel = 105;  // 炮管长度
+			static const Vector2 pos_barrel_center = { 640,610 };  // 炮管锚点中心位置
+
+			bullet_list.emplace_back(angle_barrel); // 构造新的子弹对象
+			Bullet& bullet = bullet_list.back();
+			double angle_bullet = angle_barrel + (rand() % 30 - 15); // 弹道随机偏移
+			double radians = angle_bullet * 3.14159265 / 180;
+			Vector2 bullet_direction = { (float)std::cos(radians),(float)std::sin(radians) };
+			bullet.set_position(pos_barrel_center + bullet_direction * length_barrel); // 重设子弹位置
+
+			// 播放开火音效
+			switch (rand() % 3) {
+			case 0: Mix_PlayChannel(-1, sound_fire_1, 0); break;
+			case 1: Mix_PlayChannel(-1, sound_fire_2, 0); break;
+			case 2: Mix_PlayChannel(-1, sound_fire_3, 0); break;
+			}
+		}
+		});
+
+	// 播放背景音乐
 	Mix_PlayMusic(music_bgm, -1);
 }
 
@@ -211,8 +270,11 @@ void deinit() {
 
 //func：更新
 void on_update(float delta) {
+	//更新所有定时器
 	timer_generate.on_update(delta);
 	timer_increase_num_per_gen.on_update(delta);
+	timer_auto_fire.on_update(delta); // 更新自动开火定时器
+
 
 	//更新子弹列表：位置更新
 	for (Bullet& bullet : bullet_list) {
@@ -253,7 +315,7 @@ void on_update(float delta) {
 		}
 	}
 
-
+	//删除所有失效对象
 	bullet_list.erase(std::remove_if(
 		bullet_list.begin(), bullet_list.end(),
 		[](const Bullet& bullet) {
@@ -275,12 +337,18 @@ void on_update(float delta) {
 		{return chicken_1->get_position().y < chicken_2->get_position().y; });
 
 	//正在开火，camera->shake()
+	/*
 	if (!is_cool_down) {
 		camera->shake(3.0f, 0.1f);
 		animation_barrel_fire.on_update(delta); 
 	}
+	*/
+	//改为自动开火
+	camera->shake(3.0f, 0.1f);
+	animation_barrel_fire.on_update(delta);
 
 	//处理开火瞬间逻辑（没有开火&&按下开火键）
+	/*
 	if (is_cool_down && is_fire_key_down) {
 		animation_barrel_fire.reset();
 		is_cool_down = false;
@@ -303,9 +371,16 @@ void on_update(float delta) {
 		case 2:Mix_PlayChannel(-1, sound_fire_3, 0); break;
 		}
 	}
+	*/
 
+	//正在开火，camera->shake()
+	camera->shake(3.0f, 0.1f);
+	animation_barrel_fire.on_update(delta);
+
+	//更新摄像机状态，发生抖动
 	camera->on_update(delta);
 
+	//检查游戏是否结束
 	if (hp <= 0) {
 		is_quit = true;
 		Mix_HaltMusic();
@@ -314,7 +389,6 @@ void on_update(float delta) {
 		std::string msg = u8"Final score:" + std::to_string(score);
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, u8"End!!", msg.c_str(), window);
 	}
-
 
 }
 
@@ -360,12 +434,17 @@ void on_render(const Camera& camera) {
 			pos_barrel.x,pos_barrel.y,
 			(float)width_barrel,(float)height_barrel
 		};
+		/*
 		if (is_cool_down)
 			camera.render_texture(tex_barrel_idle, nullptr, &rect_barrel, angle_barrel, &center_barrel);
 		else {
 			animation_barrel_fire.set_rotation(angle_barrel);
 			animation_barrel_fire.on_render(camera);
 		}
+		*/
+		// 由于现在总是使用开火动画，可以简化为
+		animation_barrel_fire.set_rotation(angle_barrel);
+		animation_barrel_fire.on_render(camera);
 	}
 
 
@@ -439,11 +518,19 @@ void mainloop() {
 				angle_barrel = std::atan2(direction.y, direction.x) * 180 / 3.14159265;
 			}
 				break;
+			/*
 			case SDL_MOUSEBUTTONDOWN:
 				is_fire_key_down = true;
 				break;
 			case SDL_MOUSEBUTTONUP:
 				is_fire_key_down = false;
+				break;
+				*/
+
+			// 可以完全移除这些代码，因为不再需要处理手动开火
+			case SDL_MOUSEBUTTONDOWN:
+				break;
+			case SDL_MOUSEBUTTONUP:
 				break;
 			}
 		}

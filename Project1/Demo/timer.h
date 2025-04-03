@@ -5,7 +5,7 @@
 
 class Timer {
 public:
-	Timer()=default;
+	Timer() : pass_time(0), wait_time(0), shotted(false), one_shot(false), paused(false) {}
 	~Timer() = default;
 
 	void restart() {
