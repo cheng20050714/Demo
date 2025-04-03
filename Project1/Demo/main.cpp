@@ -66,10 +66,14 @@ int score = 0;
 std::vector<Bullet> bullet_list;
 std::vector<Chicken*> chicken_list;
 
-int num_per_gen = 2;
+int num_per_gen = 1;
 Timer timer_generate;  //僵尸鸡生成定时器
 Timer timer_increase_num_per_gen; //增加每次生成数量定时器
 Timer timer_auto_fire; // 自动开火定时器
+bool is_barrel_firing = false; // 是否正在开火的标志
+float barrel_fire_time = 0;    // 开火动画已播放时间
+const float BARREL_FIRE_DURATION = 0.3f; // 开火动画持续时间
+
 
 Vector2 pos_crosshair;
 double angle_barrel = 0; //炮管旋转角度
@@ -132,10 +136,7 @@ void load_resources() {
 
 	//加载words_list
 	std::ifstream file("../resources/words_list.txt");
-	if (!file.is_open()) {
-		std::cerr << "无法打开单词文件！" << std::endl;
-		return;
-	}
+
 
 	std::string english, chinese;
 	while (std::getline(file, english)) {
@@ -182,8 +183,6 @@ void init() {
 		1280, 720, SDL_WINDOW_SHOWN);
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	
-
 
 	SDL_ShowCursor(SDL_DISABLE); //光标不可见
 
@@ -193,66 +192,38 @@ void init() {
 
 	timer_generate.set_one_shot(false);
 	timer_generate.set_wait_time(1.5f);
-	timer_generate.set_on_timeout([&](){
+	timer_generate.set_on_timeout([&]() {
 		for (int i = 0; i < num_per_gen; i++) {
 			int val = rand() % 100;
 			Chicken* chicken = nullptr;
 			if (val < 50)
 				chicken = new ChickenSlow();
-			else if (val < 80) 
+			else if (val < 80)
 				chicken = new ChickenMedium();
 			else
 				chicken = new ChickenFast();
 			chicken_list.push_back(chicken);
 		}
-	});
-
+		});
 
 	animation_barrel_fire.add_frame(&atlas_barrel_fire);
 	animation_barrel_fire.set_position(pos_battery);
 	animation_barrel_fire.set_center(center_barrel);
-	animation_barrel_fire.set_interval(0.1f); 
-
-	// 设置自动开火定时器
-	timer_auto_fire.set_one_shot(false);
-	timer_auto_fire.set_wait_time(0.5f);
-	timer_auto_fire.set_on_timeout([&]() {
-		if (!chicken_list.empty()) {
-			// 找到最靠近边界的鸡
-			Chicken* target_chicken = *std::min_element(chicken_list.begin(), chicken_list.end(),
-				[](Chicken* a, Chicken* b) {
-					return a->get_position().y > b->get_position().y;
-				});
-
-			// 计算目标方向
-			Vector2 target_direction = target_chicken->get_position() - pos_battery;
-			angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
-
-			// 生成子弹
-			animation_barrel_fire.reset();
-
-			static const float length_barrel = 105;  // 炮管长度
-			static const Vector2 pos_barrel_center = { 640,610 };  // 炮管锚点中心位置
-
-			bullet_list.emplace_back(angle_barrel); // 构造新的子弹对象
-			Bullet& bullet = bullet_list.back();
-			double angle_bullet = angle_barrel + (rand() % 30 - 15); // 弹道随机偏移
-			double radians = angle_bullet * 3.14159265 / 180;
-			Vector2 bullet_direction = { (float)std::cos(radians),(float)std::sin(radians) };
-			bullet.set_position(pos_barrel_center + bullet_direction * length_barrel); // 重设子弹位置
-
-			// 播放开火音效
-			switch (rand() % 3) {
-			case 0: Mix_PlayChannel(-1, sound_fire_1, 0); break;
-			case 1: Mix_PlayChannel(-1, sound_fire_2, 0); break;
-			case 2: Mix_PlayChannel(-1, sound_fire_3, 0); break;
-			}
-		}
-		});
+	animation_barrel_fire.set_interval(0.1f);
 
 	// 播放背景音乐
 	Mix_PlayMusic(music_bgm, -1);
+
+	// 初始化拼写游戏
+	if (!word_dictionary.empty()) {
+		auto it = word_dictionary.begin();
+		std::advance(it, rand() % word_dictionary.size());
+		current_word = it->first;
+		current_definition = it->second;
+		is_spelling_game_active = true;
+	}
 }
+
 
 void deinit() {
 	delete camera;
@@ -268,287 +239,330 @@ void deinit() {
 	SDL_Quit();
 }
 
+
+//Vector2 pos_crosshair; //不需要准心位置了
 //func：更新
 void on_update(float delta) {
-	//更新所有定时器
-	timer_generate.on_update(delta);
-	timer_increase_num_per_gen.on_update(delta);
-	timer_auto_fire.on_update(delta); // 更新自动开火定时器
+    //更新所有定时器
+    timer_generate.on_update(delta);
+    timer_increase_num_per_gen.on_update(delta);
 
+    // 自动瞄准最近的僵尸鸡
+    if (!chicken_list.empty()) {
+        // 找到最近的鸡（这里用Y坐标最大的，也就是最靠近底部的）
+        Chicken* target_chicken = *std::min_element(chicken_list.begin(), chicken_list.end(),
+            [](Chicken* a, Chicken* b) {
+                return a->get_position().y > b->get_position().y;
+            });
 
-	//更新子弹列表：位置更新
-	for (Bullet& bullet : bullet_list) {
-		bullet.on_update(delta);
-	}
+        // 计算目标方向
+        Vector2 target_direction = target_chicken->get_position() - pos_battery;
+        angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
+    }
 
-	//更新僵尸鸡列表并处理子弹碰撞
-	for (Chicken* chicken : chicken_list) {
-		chicken->on_update(delta);
+    // 更新开火状态和动画
+    if (is_barrel_firing) {
+        barrel_fire_time += delta;
 
-		//对每个子弹依次检测
-		//可否考虑优化
-		for (Bullet& bullet : bullet_list) {
-			if (!chicken->check_alive() || bullet.can_remove()) 
-				continue;
+        // 只有在开火状态时才触发相机震动
+        camera->shake(3.0f, 0.1f);
+        animation_barrel_fire.on_update(delta);
 
-			const Vector2& pos_bullet = bullet.get_position();
-			const Vector2& pos_chicken = chicken->get_position();
-			static const Vector2 size_chicken = { 30,40 };
-			if (pos_bullet.x >= pos_chicken.x - size_chicken.x / 2
-				&& pos_bullet.x <= pos_chicken.x + size_chicken.x / 2
-				&& pos_bullet.y >= pos_chicken.y - size_chicken.y / 2
-				&& pos_bullet.y <= pos_chicken.y + size_chicken.y / 2) {
-				score += 1;
-				bullet.on_hit();
-				chicken->on_hurt();//is_alive:false
-			}
-		}
+        // 开火动画结束
+        if (barrel_fire_time >= BARREL_FIRE_DURATION) {
+            is_barrel_firing = false;
+            barrel_fire_time = 0;
+        }
+    }
 
-		if (!chicken->check_alive())
-			continue;
+    //更新子弹列表：位置更新
+    for (Bullet& bullet : bullet_list) {
+        bullet.on_update(delta);
+    }
 
-		//鸡超过底部，hp--，播放音效
-		if (chicken->get_position().y >= 720) {
-			chicken->make_invalid();
-			Mix_PlayChannel(-1, sound_hurt, 0);
-			hp -= 1;
-		}
-	}
+    //更新僵尸鸡列表并处理子弹碰撞
+    for (Chicken* chicken : chicken_list) {
+        chicken->on_update(delta);
 
-	//删除所有失效对象
-	bullet_list.erase(std::remove_if(
-		bullet_list.begin(), bullet_list.end(),
-		[](const Bullet& bullet) {
-			return bullet.can_remove();
-		}),
-		bullet_list.end());
+        //对每个子弹依次检测
+        for (Bullet& bullet : bullet_list) {
+            if (!chicken->check_alive() || bullet.can_remove())
+                continue;
 
-	chicken_list.erase(std::remove_if(
-		chicken_list.begin(), chicken_list.end(),
-		[](Chicken* chicken) {
-			bool can_remove = chicken->can_remove();
-			if (can_remove)delete chicken;
-			return can_remove;
-		}),
-		chicken_list.end());
+            const Vector2& pos_bullet = bullet.get_position();
+            const Vector2& pos_chicken = chicken->get_position();
+            static const Vector2 size_chicken = { 30,40 };
+            if (pos_bullet.x >= pos_chicken.x - size_chicken.x / 2
+                && pos_bullet.x <= pos_chicken.x + size_chicken.x / 2
+                && pos_bullet.y >= pos_chicken.y - size_chicken.y / 2
+                && pos_bullet.y <= pos_chicken.y + size_chicken.y / 2) {
+                score += 1;
+                bullet.on_hit();
+                chicken->on_hurt();//is_alive:false
+            }
+        }
 
-	std::sort(chicken_list.begin(), chicken_list.end(),
-		[](const Chicken* chicken_1, const Chicken* chicken_2)
-		{return chicken_1->get_position().y < chicken_2->get_position().y; });
+        if (!chicken->check_alive())
+            continue;
 
-	//正在开火，camera->shake()
-	/*
-	if (!is_cool_down) {
-		camera->shake(3.0f, 0.1f);
-		animation_barrel_fire.on_update(delta); 
-	}
-	*/
-	//改为自动开火
-	camera->shake(3.0f, 0.1f);
-	animation_barrel_fire.on_update(delta);
+        //鸡超过底部，hp--，播放音效
+        if (chicken->get_position().y >= 720) {
+            chicken->make_invalid();
+            Mix_PlayChannel(-1, sound_hurt, 0);
+            hp -= 1;
+        }
+    }
 
-	//处理开火瞬间逻辑（没有开火&&按下开火键）
-	/*
-	if (is_cool_down && is_fire_key_down) {
-		animation_barrel_fire.reset();
-		is_cool_down = false;
+    //删除所有失效对象
+    bullet_list.erase(std::remove_if(
+        bullet_list.begin(), bullet_list.end(),
+        [](const Bullet& bullet) {
+            return bullet.can_remove();
+        }),
+        bullet_list.end());
 
-		static const float length_barrel = 105;  //炮管长度
-		static const Vector2 pos_barrel_center = { 640,610 };  //炮管锚点中心位置
+    chicken_list.erase(std::remove_if(
+        chicken_list.begin(), chicken_list.end(),
+        [](Chicken* chicken) {
+            bool can_remove = chicken->can_remove();
+            if (can_remove)delete chicken;
+            return can_remove;
+        }),
+        chicken_list.end());
 
-		bullet_list.emplace_back(angle_barrel);//构造新的子弹对象
-		Bullet& bullet = bullet_list.back();
-		double angle_bullet = angle_barrel + (rand() % 30 - 15);//弹道随机偏移
-		double radians = angle_bullet * 3.14159265 / 180;
-		Vector2 direciton = { (float)std::cos(radians),(float)std::sin(radians) };
-		bullet.set_position(pos_barrel_center + direciton * length_barrel);//重设子弹位置
+    std::sort(chicken_list.begin(), chicken_list.end(),
+        [](const Chicken* chicken_1, const Chicken* chicken_2)
+        {return chicken_1->get_position().y < chicken_2->get_position().y; });
 
+    // 移除这里的重复代码，因为已经在开火状态处理中处理了
+    // 不开火时不需要摄像机抖动
+    // camera->shake(3.0f, 0.1f);
+    // animation_barrel_fire.on_update(delta);
 
+    //更新摄像机状态，发生抖动
+    camera->on_update(delta);
 
-		switch (rand() % 3) {
-		case 0:Mix_PlayChannel(-1, sound_fire_1, 0); break;
-		case 1:Mix_PlayChannel(-1, sound_fire_2, 0); break;
-		case 2:Mix_PlayChannel(-1, sound_fire_3, 0); break;
-		}
-	}
-	*/
+    //检查游戏是否结束
+    if (hp <= 0) {
+        is_quit = true;
+        Mix_HaltMusic();
+        Mix_PlayMusic(music_loss, 0);
 
-	//正在开火，camera->shake()
-	camera->shake(3.0f, 0.1f);
-	animation_barrel_fire.on_update(delta);
-
-	//更新摄像机状态，发生抖动
-	camera->on_update(delta);
-
-	//检查游戏是否结束
-	if (hp <= 0) {
-		is_quit = true;
-		Mix_HaltMusic();
-		Mix_PlayMusic(music_loss,0);
-
-		std::string msg = u8"Final score:" + std::to_string(score);
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, u8"End!!", msg.c_str(), window);
-	}
-
+        std::string msg = u8"Final score:" + std::to_string(score);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, u8"End!!", msg.c_str(), window);
+    }
 }
 
+
+// 修改渲染函数，移除准心渲染
 void on_render(const Camera& camera) {
+    //绘制背景图
+    {
+        int width_bg, height_bg;
+        SDL_QueryTexture(tex_background, nullptr, nullptr, &width_bg, &height_bg);
+        const SDL_FRect rect_background = {
+            (1280 - width_bg) / 2.0f,
+            (720 - height_bg) / 2.0f,
+            (float)width_bg,(float)height_bg,
+        };
+        camera.render_texture(tex_background, nullptr, &rect_background, 0, nullptr);
+    }
 
-	//绘制背景图
-	{
-		int width_bg, height_bg;
-		SDL_QueryTexture(tex_background, nullptr, nullptr, &width_bg, &height_bg);
-		const SDL_FRect rect_background = {
-			(1280 - width_bg) / 2.0f,
-			(720 - height_bg) / 2.0f,
-			(float)width_bg,(float)height_bg,
-		};
-		camera.render_texture(tex_background, nullptr, &rect_background, 0, nullptr);
-	}
+    //绘制鸡
+    for (Chicken* chicken : chicken_list)
+        chicken->on_render(camera);
 
-	//绘制鸡
-	for (Chicken* chicken : chicken_list)
-		chicken->on_render(camera);
+    //绘制子弹
+    for (const Bullet& bullet : bullet_list)
+        bullet.on_render(camera);
 
-	//绘制子弹
-	for (const Bullet& bullet : bullet_list)
-		bullet.on_render(camera);
+    //绘制炮台
+    {
+        int width_battery, height_battery;
+        SDL_QueryTexture(tex_battery, nullptr, nullptr, &width_battery, &height_battery);
+        const SDL_FRect rect_battery = {
+            pos_battery.x - width_battery / 2.0f,
+            pos_battery.y - height_battery / 2.0f,
+            (float)width_battery,(float)height_battery
+        };
+        camera.render_texture(tex_battery, nullptr, &rect_battery, 0, nullptr);
 
+        //绘制炮管
+        int width_barrel, height_barrel;
+        SDL_QueryTexture(tex_barrel_idle, nullptr, nullptr, &width_barrel, &height_barrel);
+        const SDL_FRect rect_barrel = {
+            pos_barrel.x, pos_barrel.y,
+            (float)width_barrel, (float)height_barrel
+        };
 
-	//绘制炮台
-	{
+        if (is_barrel_firing) {
+            // 如果正在开火，显示开火动画
+            animation_barrel_fire.set_rotation(angle_barrel);
+            animation_barrel_fire.on_render(camera);
+        }
+        else {
+            // 如果没有开火，显示静态炮管
+            camera.render_texture(tex_barrel_idle, nullptr, &rect_barrel, angle_barrel, &center_barrel);
+        }
+    }
 
-		int width_battery, height_battery;
-		SDL_QueryTexture(tex_battery, nullptr, nullptr, &width_battery, &height_battery);
-		const SDL_FRect rect_battery = {
-			pos_battery.x - width_battery / 2.0f,
-			pos_battery.y - height_battery / 2.0f,
-			(float)width_battery,(float)height_battery
-		};
-		camera.render_texture(tex_battery, nullptr, &rect_battery, 0, nullptr);
+    //绘制生命值
+    {
+        int width_heart, height_heart;
+        SDL_QueryTexture(tex_heart, nullptr, nullptr, &width_heart, &height_heart);
+        for (int i = 0; i < hp; i++)
+        {
+            const SDL_Rect rect_dst =
+            {
+                15 + (width_heart + 10) * i, 15,
+                width_heart, height_heart
+            };
+            SDL_RenderCopy(renderer, tex_heart, nullptr, &rect_dst);
+        }
+    }
 
-		//绘制炮管
-		int width_barrel, height_barrel;
-		SDL_QueryTexture(tex_barrel_idle, nullptr, nullptr, &width_barrel, &height_barrel);
-		const SDL_FRect rect_barrel = {
-			pos_barrel.x,pos_barrel.y,
-			(float)width_barrel,(float)height_barrel
-		};
-		/*
-		if (is_cool_down)
-			camera.render_texture(tex_barrel_idle, nullptr, &rect_barrel, angle_barrel, &center_barrel);
-		else {
-			animation_barrel_fire.set_rotation(angle_barrel);
-			animation_barrel_fire.on_render(camera);
-		}
-		*/
-		// 由于现在总是使用开火动画，可以简化为
-		animation_barrel_fire.set_rotation(angle_barrel);
-		animation_barrel_fire.on_render(camera);
-	}
+    {
+        // 绘制游戏得分
+        std::string str_score = "SCORE: " + std::to_string(score);
+        SDL_Surface* suf_score_bg = TTF_RenderUTF8_Blended(font, str_score.c_str(), { 55, 55, 55, 255 });
+        SDL_Surface* suf_score_fg = TTF_RenderUTF8_Blended(font, str_score.c_str(), { 255, 255, 255, 255 });
+        if (suf_score_bg && suf_score_fg) {
+            SDL_Texture* tex_score_bg = SDL_CreateTextureFromSurface(renderer, suf_score_bg);
+            SDL_Texture* tex_score_fg = SDL_CreateTextureFromSurface(renderer, suf_score_fg);
+            if (tex_score_bg && tex_score_fg) {
+                SDL_Rect rect_dst_score = { 1280 - suf_score_bg->w - 15, 15, suf_score_bg->w, suf_score_bg->h };
+                SDL_RenderCopy(renderer, tex_score_bg, nullptr, &rect_dst_score);
+                rect_dst_score.x -= 2;
+                rect_dst_score.y -= 2;
+                SDL_RenderCopy(renderer, tex_score_fg, nullptr, &rect_dst_score);
+                SDL_DestroyTexture(tex_score_bg);
+                SDL_DestroyTexture(tex_score_fg);
+            }
+            SDL_FreeSurface(suf_score_bg);
+            SDL_FreeSurface(suf_score_fg);
+        }
+    }
 
+    // 移除绘制准心的代码块
 
-	//绘制生命值
-	{
-		int width_heart, height_heart;
-		SDL_QueryTexture(tex_heart, nullptr, nullptr, &width_heart, &height_heart);
-		for (int i = 0; i < hp; i++)
-		{
-			const SDL_Rect rect_dst =
-			{
-				15 + (width_heart + 10) * i, 15,
-				width_heart, height_heart
-			};
-			SDL_RenderCopy(renderer, tex_heart, nullptr, &rect_dst);
-		}
-	}
+    // 绘制中文释义和玩家输入
+    if (is_spelling_game_active) {
+        SDL_Surface* suf_definition = TTF_RenderUTF8_Blended(font, current_definition.c_str(), { 255, 255, 255, 255 });
+        if (suf_definition) {
+            SDL_Texture* tex_definition = SDL_CreateTextureFromSurface(renderer, suf_definition);
+            if (tex_definition) {
+                SDL_Rect rect_dst_definition = { 15, 100, suf_definition->w, suf_definition->h };
+                SDL_RenderCopy(renderer, tex_definition, nullptr, &rect_dst_definition);
+                SDL_DestroyTexture(tex_definition);
+            }
+            SDL_FreeSurface(suf_definition);
+        }
 
-	{
-		// 绘制游戏得分
-		std::string str_score = "SCORE: " + std::to_string(score);
-		SDL_Surface* suf_score_bg = TTF_RenderUTF8_Blended(font, str_score.c_str(), { 55, 55, 55, 255 });
-		SDL_Surface* suf_score_fg = TTF_RenderUTF8_Blended(font, str_score.c_str(), { 255, 255, 255, 255 });
-		SDL_Texture* tex_score_bg = SDL_CreateTextureFromSurface(renderer, suf_score_bg);
-		SDL_Texture* tex_score_fg = SDL_CreateTextureFromSurface(renderer, suf_score_fg);
-		SDL_Rect rect_dst_score = { 1280 - suf_score_bg->w - 15, 15, suf_score_bg->w, suf_score_bg->h };
-		SDL_RenderCopy(renderer, tex_score_bg, nullptr, &rect_dst_score);
-		rect_dst_score.x -= 2;
-		rect_dst_score.y -= 2;
-		SDL_RenderCopy(renderer, tex_score_fg, nullptr, &rect_dst_score);
-		SDL_DestroyTexture(tex_score_bg);
-		SDL_DestroyTexture(tex_score_fg);
-		SDL_FreeSurface(suf_score_bg);
-		SDL_FreeSurface(suf_score_fg);
-
-	}
-
-	//绘制准心
-	{
-		int width_crosshair, height_crosshair;
-		SDL_QueryTexture(tex_crosshair, nullptr, nullptr, &width_crosshair, &height_crosshair);
-		const SDL_FRect rect_crosshair =
-		{
-			pos_crosshair.x - width_crosshair / 2.0f,
-			pos_crosshair.y - height_crosshair / 2.0f,
-			(float)width_crosshair, (float)height_crosshair
-		};
-		camera.render_texture(tex_crosshair, nullptr, &rect_crosshair, 0, nullptr);
-
-	}
-
+        // 绘制玩家输入
+        SDL_Surface* suf_input = TTF_RenderUTF8_Blended(font, player_input.c_str(), { 255, 255, 255, 255 });
+        if (suf_input) {
+            SDL_Texture* tex_input = SDL_CreateTextureFromSurface(renderer, suf_input);
+            if (tex_input) {
+                SDL_Rect rect_dst_input = { 15, 150, suf_input->w, suf_input->h };
+                SDL_RenderCopy(renderer, tex_input, nullptr, &rect_dst_input);
+                SDL_DestroyTexture(tex_input);
+            }
+            SDL_FreeSurface(suf_input);
+        }
+    }
 }
 
+// 修改主循环，移除鼠标事件处理
 void mainloop() {
-	using namespace std::chrono;
-	SDL_Event event;
+    using namespace std::chrono;
+    SDL_Event event;
 
-	const nanoseconds frame_duration(1000000000 / 144);
-	steady_clock::time_point last_tick = steady_clock::now();
+    const nanoseconds frame_duration(1000000000 / 144);
+    steady_clock::time_point last_tick = steady_clock::now();
 
-	while (!is_quit) {
-		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-			case SDL_QUIT:
-				is_quit = true;
-				break;
-			case SDL_MOUSEMOTION: {
-				pos_crosshair.x = (float)event.motion.x;
-				pos_crosshair.y = (float)event.motion.y;
-				Vector2 direction = pos_crosshair - pos_battery;
-				angle_barrel = std::atan2(direction.y, direction.x) * 180 / 3.14159265;
-			}
-				break;
-			/*
-			case SDL_MOUSEBUTTONDOWN:
-				is_fire_key_down = true;
-				break;
-			case SDL_MOUSEBUTTONUP:
-				is_fire_key_down = false;
-				break;
-				*/
+    while (!is_quit) {
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+            case SDL_QUIT:
+                is_quit = true;
+                break;
+                // 移除鼠标移动事件处理
+            case SDL_KEYDOWN:
+                if (is_spelling_game_active) {
+                    char key = event.key.keysym.sym;
+                    // 检查按键是否是小写字母
+                    if (key >= 'a' && key <= 'z') {
+                        // 检查当前输入位置的正确字母
+                        if (player_input.length() < current_word.length() &&
+                            key == current_word[player_input.length()]) {
+                            // 输入正确，添加到玩家输入
+                            player_input += key;
 
-			// 可以完全移除这些代码，因为不再需要处理手动开火
-			case SDL_MOUSEBUTTONDOWN:
-				break;
-			case SDL_MOUSEBUTTONUP:
-				break;
-			}
-		}
-		steady_clock::time_point frame_start = steady_clock::now();
-		duration<float> delta = duration<float>(frame_start - last_tick);
+                            // 开始开火动画
+                            is_barrel_firing = true;
+                            barrel_fire_time = 0;
+                            animation_barrel_fire.reset();
 
-		on_update(delta.count());
-		on_render(*camera);
-		SDL_RenderPresent(renderer);
+                            // 生成子弹
+                            static const float length_barrel = 105;  // 炮管长度
+                            static const Vector2 pos_barrel_center = { 640,610 };  // 炮管锚点中心位置
 
-		last_tick = frame_start;
-		nanoseconds sleep_duration = frame_duration - (steady_clock::now() - frame_start);
-		if (sleep_duration > nanoseconds(0)) {
-			std::this_thread::sleep_for(sleep_duration);
-		}
-	}
+                            bullet_list.emplace_back(angle_barrel); // 构造新的子弹对象
+                            Bullet& bullet = bullet_list.back();
+                            double angle_bullet = angle_barrel;
+                            double radians = angle_bullet * 3.14159265 / 180;
+                            Vector2 bullet_direction = { (float)std::cos(radians),(float)std::sin(radians) };
+                            bullet.set_position(pos_barrel_center + bullet_direction * length_barrel); // 重设子弹位置
 
-}//游戏主循环
+                            // 播放开火音效
+                            switch (rand() % 3) {
+                            case 0: Mix_PlayChannel(-1, sound_fire_1, 0); break;
+                            case 1: Mix_PlayChannel(-1, sound_fire_2, 0); break;
+                            case 2: Mix_PlayChannel(-1, sound_fire_3, 0); break;
+                            }
+
+                            // 如果完全拼写正确，选择下一个单词
+                            if (player_input == current_word) {
+                                // 得分增加
+                                score += 10;
+
+                                // 延迟一下再切换单词，让玩家看到完整单词
+                                SDL_Delay(10);
+
+                                // 清空玩家输入
+                                player_input.clear();
+
+                                // 选择下一个单词
+                                auto it = word_dictionary.begin();
+                                std::advance(it, rand() % word_dictionary.size());
+                                current_word = it->first;
+                                current_definition = it->second;
+                            }
+                        }
+                        // 如果输入错误的字母，不做任何处理
+                    }
+                }
+                break;
+                // 移除鼠标按钮事件处理
+            }
+        }
+        steady_clock::time_point frame_start = steady_clock::now();
+        duration<float> delta = duration<float>(frame_start - last_tick);
+
+        on_update(delta.count());
+        on_render(*camera);
+        SDL_RenderPresent(renderer);
+
+        last_tick = frame_start;
+        nanoseconds sleep_duration = frame_duration - (steady_clock::now() - frame_start);
+        if (sleep_duration > nanoseconds(0)) {
+            std::this_thread::sleep_for(sleep_duration);
+        }
+    }
+}
+
+
+
 
 int main() {
 	init();

@@ -7,6 +7,18 @@
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_medium.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\chicken_medium.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_fast.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\chicken_fast.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_slow.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\chicken_slow.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\animation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\animation.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
@@ -27,24 +39,12 @@
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\bullet.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_slow.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\chicken_slow.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\camera.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\camera.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\atlas.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\atlas.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_medium.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\chicken_medium.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_fast.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\chicken_fast.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -58,7 +58,7 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "vector2.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\vector2.h",
               "RelativeDocumentMoniker": "Demo\\vector2.h",
@@ -67,12 +67,11 @@
               "ViewState": "AgIAAAYAAAAAAAAAAAAAABQAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-03-01T11:53:24.142Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "animation.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\animation.h",
               "RelativeDocumentMoniker": "Demo\\animation.h",
@@ -80,12 +79,11 @@
               "RelativeToolTip": "Demo\\animation.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAPAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-03-04T14:43:41.364Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-04T14:43:41.364Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "atlas.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\atlas.h",
               "RelativeDocumentMoniker": "Demo\\atlas.h",
@@ -93,12 +91,11 @@
               "RelativeToolTip": "Demo\\atlas.h",
               "ViewState": "AgIAAAAAAAAAAAAAAADwvwAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-03-04T14:43:39.909Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-04T14:43:39.909Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
               "Title": "timer.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\timer.h",
               "RelativeDocumentMoniker": "Demo\\timer.h",
@@ -106,12 +103,11 @@
               "RelativeToolTip": "Demo\\timer.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-03-04T14:12:54.523Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-04T14:12:54.523Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "camera.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\camera.h",
               "RelativeDocumentMoniker": "Demo\\camera.h",
@@ -119,8 +115,7 @@
               "RelativeToolTip": "Demo\\camera.h",
               "ViewState": "AgIAABgAAAAAAAAAAAAAABIAAAAGAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-03-01T11:53:20.696Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-03-01T11:53:20.696Z"
             },
             {
               "$type": "Document",
@@ -130,14 +125,14 @@
               "RelativeDocumentMoniker": "Demo\\main.cpp",
               "ToolTip": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\main.cpp",
               "RelativeToolTip": "Demo\\main.cpp",
-              "ViewState": "AgIAAHgAAAAAAAAAAAAAAI8AAAADAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACwAAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-03-01T03:51:50.263Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 3,
               "Title": "chicken_slow.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_slow.h",
               "RelativeDocumentMoniker": "Demo\\chicken_slow.h",
@@ -150,33 +145,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 1,
               "Title": "chicken_medium.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_medium.h",
               "RelativeDocumentMoniker": "Demo\\chicken_medium.h",
               "ToolTip": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_medium.h",
               "RelativeToolTip": "Demo\\chicken_medium.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAGAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-03-01T03:48:10.115Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 2,
               "Title": "chicken_fast.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_fast.h",
               "RelativeDocumentMoniker": "Demo\\chicken_fast.h",
               "ToolTip": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken_fast.h",
               "RelativeToolTip": "Demo\\chicken_fast.h",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAGAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-03-01T03:44:26.077Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "chicken.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\chicken.h",
               "RelativeDocumentMoniker": "Demo\\chicken.h",
@@ -184,12 +179,11 @@
               "RelativeToolTip": "Demo\\chicken.h",
               "ViewState": "AgIAACoAAAAAAAAAAAAuwDIAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-02-27T13:06:03.053Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-27T13:06:03.053Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 8,
               "Title": "bullet.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\bullet.h",
               "RelativeDocumentMoniker": "Demo\\bullet.h",
@@ -197,8 +191,7 @@
               "RelativeToolTip": "Demo\\bullet.h",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-02-27T12:56:52.316Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-02-27T12:56:52.316Z"
             }
           ]
         }
