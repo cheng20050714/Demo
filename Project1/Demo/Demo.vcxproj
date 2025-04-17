@@ -131,11 +131,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="boss_1.h" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="animation.h" />
     <ClInclude Include="atlas.h" />
+    <ClInclude Include="boss.h" />
+    <ClInclude Include="boss_2.h" />
+    <ClInclude Include="boss_3.h" />
     <ClInclude Include="bullet.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="chicken.h" />

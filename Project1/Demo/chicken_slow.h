@@ -10,7 +10,7 @@ public:
 	ChickenSlow() {
 		animation_run.add_frame(&atlas_chicken_slow);
 		speed_run = 10.0f;
-		//30->10
+		//30->15
 	}
 
 	~ChickenSlow() = default;

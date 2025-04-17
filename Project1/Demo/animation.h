@@ -64,7 +64,7 @@ public:
     void add_frame(SDL_Texture* texture, int num_h) {
         int width, height;
         SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
-        int width_frame = width / height;
+        int width_frame = width / num_h;
 
         for (int i = 0; i < num_h; i++) {
             SDL_Rect rect_src;

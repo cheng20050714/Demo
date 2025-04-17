@@ -18,6 +18,9 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="boss_1.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="atlas.h">
@@ -48,6 +51,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="chicken_slow.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="boss.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="boss_2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="boss_3.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

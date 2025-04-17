@@ -9,8 +9,8 @@ class ChickenFast : public Chicken {
 public:
 	ChickenFast() {
 		animation_run.add_frame(&atlas_chicken_fast);
-		speed_run = 20.0f;
-		//80->20
+		speed_run = 30.0f;
+		//80->30
 	}
 
 	~ChickenFast() = default;

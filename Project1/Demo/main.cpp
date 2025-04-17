@@ -8,6 +8,9 @@
 #include "chicken_fast.h"
 #include "chicken_slow.h"
 #include "chicken_medium.h"
+#include "boss_1.h"
+#include "boss_2.h"
+#include "boss_3.h"
 
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -42,10 +45,15 @@ SDL_Texture* tex_background = nullptr;
 SDL_Texture* tex_barrel_idle = nullptr;
 
 Atlas atlas_barrel_fire;
+Atlas atlas_boss_explosion;
 Atlas atlas_chicken_fast;
 Atlas atlas_chicken_medium;
 Atlas atlas_chicken_slow;
 Atlas atlas_explosion;
+Atlas atlas_boss_1;
+Atlas atlas_boss_2;
+Atlas atlas_boss_3;
+
 
 Mix_Music* music_bgm = nullptr;
 Mix_Music* music_loss = nullptr;
@@ -57,6 +65,8 @@ Mix_Chunk* sound_fire_3 = nullptr;
 Mix_Chunk* sound_explosion = nullptr;
 
 TTF_Font* font = nullptr;
+TTF_Font* font_large = nullptr;
+
 
 
 
@@ -66,7 +76,7 @@ int score = 0;
 std::vector<Bullet> bullet_list;
 std::vector<Chicken*> chicken_list;
 
-int num_per_gen = 1;
+double num_per_gen = 1.5;
 Timer timer_generate;  //僵尸鸡生成定时器
 Timer timer_increase_num_per_gen; //增加每次生成数量定时器
 Timer timer_auto_fire; // 自动开火定时器
@@ -78,13 +88,15 @@ const float BARREL_FIRE_DURATION = 0.3f; // 开火动画持续时间
 Vector2 pos_crosshair;
 double angle_barrel = 0; //炮管旋转角度
 const Vector2 pos_battery = { 640,600 }; //炮台基座中心位置
-const Vector2 pos_barrel = { 592,585 }; //炮管无旋转默认位置
+const Vector2 pos_barrel = { 582,585 }; //炮管无旋转默认位置
 const SDL_FPoint center_barrel = { 48,15 }; //炮管旋转中心坐标
 
 //bool is_cool_down = true; //是否冷却结束
 //bool is_fire_key_down = false;
 Animation animation_barrel_fire; //炮管开火动画
 
+
+//单词模式全局变量
 std::map<std::string, std::string> word_dictionary; // 英文单词到中文释义的映射
 std::string current_word;               // 当前要拼写的单词
 std::string current_definition;         // 当前单词的中文释义
@@ -92,6 +104,16 @@ std::string player_input;               // 玩家当前输入
 bool is_spelling_game_active = false;   // 拼写游戏是否激活
 int correct_letters = 0;                // 已正确输入的字母数
 Timer timer_spelling_game;
+
+//Boss模式全局变量
+Boss* boss = nullptr; // 用于管理 Boss 的指针
+bool is_boss_active = false; // 标志 Boss 是否激活
+// 如果得分达到 100 且 Boss2 和 Boss3 尚未激活，则生成它们
+Boss* boss2 = nullptr;
+Boss* boss3 = nullptr;
+bool are_boss2_and_boss3_active = false;
+
+
 
 //func：加载所有资源
 void load_resources() {
@@ -110,10 +132,18 @@ void load_resources() {
 
 	// 加载动画帧
 	atlas_barrel_fire.load(renderer, "../resources/barrel_fire_%d.png", 3);
-	atlas_chicken_fast.load(renderer, "../resources/chicken_fast_%d.png", 4);
-	atlas_chicken_medium.load(renderer, "../resources/chicken_medium_%d.png", 6);
-	atlas_chicken_slow.load(renderer, "../resources/chicken_slow_%d.png", 8);
+	atlas_chicken_fast.load(renderer, "../resources/chiikawa_3/chiikawa_3-%d.png", 5);
+	atlas_chicken_medium.load(renderer, "../resources/chiikawa_1/chiikawa_1-%d.png", 17);
+	atlas_chicken_slow.load(renderer, "../resources/chiikawa_2/chiikawa_2-%d.png", 21);
 	atlas_explosion.load(renderer, "../resources/explosion_%d.png", 5);
+	atlas_boss_explosion.load(renderer, "../resources/boss_explosion/explosion_%d.png", 5);
+    //atlas_boss_1.load(renderer, "../resources/boss_1_%d.png", 3);
+    atlas_boss_1.load(renderer, "../resources/joke_bear/joke_bear_1-%d.png",11);
+    atlas_boss_2.load(renderer, "../resources/joke_bear_2/joke_bear_2-%d.png", 11);
+	atlas_boss_3.load(renderer, "../resources/joke_bear_3/joke_bear_3-%d.png", 8);
+
+
+
 
 	// 加载音乐
 	music_bgm = Mix_LoadMUS("../resources/bgm.mp3");
@@ -133,6 +163,8 @@ void load_resources() {
 
 	// 加载字体
 	font = TTF_OpenFont("../resources/IPix.ttf", 28);
+    font_large = TTF_OpenFont("../resources/IPix.ttf", 40); // 新增大字体
+
 
 	//加载words_list
 	std::ifstream file("../resources/words_list.txt");
@@ -240,16 +272,61 @@ void deinit() {
 }
 
 
-//Vector2 pos_crosshair; //不需要准心位置了
 //func：更新
 void on_update(float delta) {
-    //更新所有定时器
-    timer_generate.on_update(delta);
-    timer_increase_num_per_gen.on_update(delta);
+    // 如果得分达到 10 且 Boss1 尚未激活，则生成 Boss1
+    if (score >= 10 && score < 20 && !is_boss_active) {
+        boss = new Boss1(); // 创建 Boss1
+        is_boss_active = true;
+    }
+
+
+
+    if (score >= 70 &&score<=80 && !are_boss2_and_boss3_active) {
+        boss2 = new Boss2(); // 创建 Boss2
+        boss3 = new Boss3(); // 创建 Boss3
+        are_boss2_and_boss3_active = true;
+    }
+
+    // 更新 Boss1
+    if (is_boss_active && boss) {
+        boss->on_update(delta);
+
+        // 如果 Boss1 死亡，清理资源
+        if (boss->can_remove()) {
+            delete boss;
+            boss = nullptr;
+            is_boss_active = false;
+        }
+    }
+
+    // 更新 Boss2 和 Boss3
+    if (are_boss2_and_boss3_active) {
+        if (boss2) {
+            boss2->on_update(delta);
+            if (boss2->can_remove()) {
+                delete boss2;
+                boss2 = nullptr;
+            }
+        }
+
+        if (boss3) {
+            boss3->on_update(delta);
+            if (boss3->can_remove()) {
+                delete boss3;
+                boss3 = nullptr;
+            }
+        }
+
+        // 如果 Boss2 和 Boss3 都被移除，则标记为不活跃
+        if (!boss2 && !boss3) {
+            are_boss2_and_boss3_active = false;
+        }
+    }
 
     // 自动瞄准最近的僵尸鸡
     if (!chicken_list.empty()) {
-        // 找到最近的鸡（这里用Y坐标最大的，也就是最靠近底部的）
+        // 找到最近的鸡（这里用 Y 坐标最大的，也就是最靠近底部的）
         Chicken* target_chicken = *std::min_element(chicken_list.begin(), chicken_list.end(),
             [](Chicken* a, Chicken* b) {
                 return a->get_position().y > b->get_position().y;
@@ -259,25 +336,96 @@ void on_update(float delta) {
         Vector2 target_direction = target_chicken->get_position() - pos_battery;
         angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
     }
+    // 自动瞄准 Boss
+    else if (is_boss_active && boss) {
+        // 获取 Boss 的位置
+        const Vector2& boss_position = boss->get_position();
 
-    // 更新开火状态和动画
+        // 计算目标方向
+        Vector2 target_direction = boss_position - pos_battery;
+
+        // 计算炮管的旋转角度
+        angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
+    }
+    else if (are_boss2_and_boss3_active) {
+        // 优先瞄准 Boss2 和 Boss3
+        if (boss2) {
+            const Vector2& boss2_position = boss2->get_position();
+            Vector2 target_direction = boss2_position - pos_battery;
+            angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
+        }
+        else if (boss3) {
+            const Vector2& boss3_position = boss3->get_position();
+            Vector2 target_direction = boss3_position - pos_battery;
+            angle_barrel = std::atan2(target_direction.y, target_direction.x) * 180 / 3.14159265;
+        }
+    }
+
+    // 更新鸡和子弹的逻辑保持不变
+    if (!is_boss_active && !are_boss2_and_boss3_active) {
+        timer_generate.on_update(delta);
+        timer_increase_num_per_gen.on_update(delta);
+
+        for (Chicken* chicken : chicken_list) {
+            chicken->on_update(delta);
+        }
+    }
+
     if (is_barrel_firing) {
         barrel_fire_time += delta;
-
-        // 只有在开火状态时才触发相机震动
         camera->shake(3.0f, 0.1f);
         animation_barrel_fire.on_update(delta);
 
-        // 开火动画结束
         if (barrel_fire_time >= BARREL_FIRE_DURATION) {
             is_barrel_firing = false;
             barrel_fire_time = 0;
         }
     }
 
-    //更新子弹列表：位置更新
     for (Bullet& bullet : bullet_list) {
         bullet.on_update(delta);
+
+        // 检查子弹是否击中 Boss1
+        if (is_boss_active && boss) {
+            const Vector2& pos_bullet = bullet.get_position();
+            const Vector2& pos_boss = boss->get_position();
+            static const Vector2 size_boss = { 200, 200 };
+            if (pos_bullet.x >= pos_boss.x - size_boss.x / 2 &&
+                pos_bullet.x <= pos_boss.x + size_boss.x / 2 &&
+                pos_bullet.y >= pos_boss.y - size_boss.y / 2 &&
+                pos_bullet.y <= pos_boss.y + size_boss.y / 2) {
+                bullet.on_hit();
+                boss->on_hurt();
+            }
+        }
+
+        // 检查子弹是否击中 Boss2
+        if (boss2) {
+            const Vector2& pos_bullet = bullet.get_position();
+            const Vector2& pos_boss2 = boss2->get_position();
+            static const Vector2 size_boss2 = { 200, 200 };
+            if (pos_bullet.x >= pos_boss2.x - size_boss2.x / 2 &&
+                pos_bullet.x <= pos_boss2.x + size_boss2.x / 2 &&
+                pos_bullet.y >= pos_boss2.y - size_boss2.y / 2 &&
+                pos_bullet.y <= pos_boss2.y + size_boss2.y / 2) {
+                bullet.on_hit();
+                boss2->on_hurt();
+            }
+        }
+
+        // 检查子弹是否击中 Boss3
+        if (boss3) {
+            const Vector2& pos_bullet = bullet.get_position();
+            const Vector2& pos_boss3 = boss3->get_position();
+            static const Vector2 size_boss3 = { 200, 200 };
+            if (pos_bullet.x >= pos_boss3.x - size_boss3.x / 2 &&
+                pos_bullet.x <= pos_boss3.x + size_boss3.x / 2 &&
+                pos_bullet.y >= pos_boss3.y - size_boss3.y / 2 &&
+                pos_bullet.y <= pos_boss3.y + size_boss3.y / 2) {
+                bullet.on_hit();
+                boss3->on_hurt();
+            }
+        }
     }
 
     //更新僵尸鸡列表并处理子弹碰撞
@@ -372,6 +520,21 @@ void on_render(const Camera& camera) {
     for (Chicken* chicken : chicken_list)
         chicken->on_render(camera);
 
+    // 绘制 Boss
+    if (is_boss_active && boss) {
+        boss->on_render(camera);
+    }
+
+    if (are_boss2_and_boss3_active) {
+        if (boss2) {
+            boss2->on_render(camera);
+        }
+        if (boss3) {
+            boss3->on_render(camera);
+        }
+    }
+
+
     //绘制子弹
     for (const Bullet& bullet : bullet_list)
         bullet.on_render(camera);
@@ -398,6 +561,8 @@ void on_render(const Camera& camera) {
         if (is_barrel_firing) {
             // 如果正在开火，显示开火动画
             animation_barrel_fire.set_rotation(angle_barrel);
+            animation_barrel_fire.set_position({ pos_battery.x + 40,
+            pos_battery.y + 10}); // 确保位置正确
             animation_barrel_fire.on_render(camera);
         }
         else {
@@ -447,27 +612,54 @@ void on_render(const Camera& camera) {
 
     // 绘制中文释义和玩家输入
     if (is_spelling_game_active) {
-        SDL_Surface* suf_definition = TTF_RenderUTF8_Blended(font, current_definition.c_str(), { 255, 255, 255, 255 });
-        if (suf_definition) {
-            SDL_Texture* tex_definition = SDL_CreateTextureFromSurface(renderer, suf_definition);
-            if (tex_definition) {
-                SDL_Rect rect_dst_definition = { 15, 100, suf_definition->w, suf_definition->h };
-                SDL_RenderCopy(renderer, tex_definition, nullptr, &rect_dst_definition);
-                SDL_DestroyTexture(tex_definition);
+        int screen_width = 1280;
+        int screen_height = 720;
+
+        SDL_Surface* suf_definition_bg = TTF_RenderUTF8_Blended(font_large, current_definition.c_str(), { 55, 55, 55, 255 });
+        SDL_Surface* suf_definition_fg = TTF_RenderUTF8_Blended(font_large, current_definition.c_str(), { 255, 255, 255, 255 });
+        if (suf_definition_bg && suf_definition_fg) {
+            SDL_Texture* tex_definition_bg = SDL_CreateTextureFromSurface(renderer, suf_definition_bg);
+            SDL_Texture* tex_definition_fg = SDL_CreateTextureFromSurface(renderer, suf_definition_fg);
+            if (tex_definition_bg && tex_definition_fg) {
+                SDL_Rect rect_dst_definition = {
+                    (screen_width - suf_definition_bg->w) / 2, // 居中
+                    (screen_height / 2) - 50,                 // 上移一些
+                    suf_definition_bg->w,
+                    suf_definition_bg->h
+                };
+                SDL_RenderCopy(renderer, tex_definition_bg, nullptr, &rect_dst_definition);
+                rect_dst_definition.x -= 2;
+                rect_dst_definition.y -= 2;
+                SDL_RenderCopy(renderer, tex_definition_fg, nullptr, &rect_dst_definition);
+                SDL_DestroyTexture(tex_definition_bg);
+                SDL_DestroyTexture(tex_definition_fg);
             }
-            SDL_FreeSurface(suf_definition);
+            SDL_FreeSurface(suf_definition_bg);
+            SDL_FreeSurface(suf_definition_fg);
         }
 
         // 绘制玩家输入
-        SDL_Surface* suf_input = TTF_RenderUTF8_Blended(font, player_input.c_str(), { 255, 255, 255, 255 });
-        if (suf_input) {
-            SDL_Texture* tex_input = SDL_CreateTextureFromSurface(renderer, suf_input);
-            if (tex_input) {
-                SDL_Rect rect_dst_input = { 15, 150, suf_input->w, suf_input->h };
-                SDL_RenderCopy(renderer, tex_input, nullptr, &rect_dst_input);
-                SDL_DestroyTexture(tex_input);
+        SDL_Surface* suf_input_bg = TTF_RenderUTF8_Blended(font_large, player_input.c_str(), { 55, 55, 55, 255 });
+        SDL_Surface* suf_input_fg = TTF_RenderUTF8_Blended(font_large, player_input.c_str(), { 255, 255, 255, 255 });
+        if (suf_input_bg && suf_input_fg) {
+            SDL_Texture* tex_input_bg = SDL_CreateTextureFromSurface(renderer, suf_input_bg);
+            SDL_Texture* tex_input_fg = SDL_CreateTextureFromSurface(renderer, suf_input_fg);
+            if (tex_input_bg && tex_input_fg) {
+                SDL_Rect rect_dst_input = {
+                    (screen_width - suf_input_bg->w) / 2, // 居中
+                    (screen_height / 2) + 30,            // 下移一些
+                    suf_input_bg->w,
+                    suf_input_bg->h
+                };
+                SDL_RenderCopy(renderer, tex_input_bg, nullptr, &rect_dst_input);
+                rect_dst_input.x -= 2;
+                rect_dst_input.y -= 2;
+                SDL_RenderCopy(renderer, tex_input_fg, nullptr, &rect_dst_input);
+                SDL_DestroyTexture(tex_input_bg);
+                SDL_DestroyTexture(tex_input_fg);
             }
-            SDL_FreeSurface(suf_input);
+            SDL_FreeSurface(suf_input_bg);
+            SDL_FreeSurface(suf_input_fg);
         }
     }
 }
@@ -527,7 +719,7 @@ void mainloop() {
                                 score += 10;
 
                                 // 延迟一下再切换单词，让玩家看到完整单词
-                                SDL_Delay(10);
+                                SDL_Delay(100);
 
                                 // 清空玩家输入
                                 player_input.clear();
