@@ -9,6 +9,7 @@
 
 // 外部资源
 extern Mix_Chunk* sound_explosion; // 爆炸音效
+extern Mix_Music* boss_bgm; // boss出现音效
 extern Atlas atlas_boss_explosion; // 通用爆炸动画图集
 
 class Boss {
@@ -36,10 +37,12 @@ public:
         speed = 20.0f;
 
         // 设置初始血量
-        hp = 5;
+        hp = 20;
 
         // 初始化时间变量
         time_elapsed = 0.0f;
+
+
     }
 
     virtual ~Boss() = default;
@@ -82,6 +85,11 @@ public:
             if (hp <= 0) {
                 is_alive = false; // 血量为 0 时死亡
                 Mix_PlayChannel(-1, sound_explosion, 0); // 播放爆炸音效
+            }
+            if (hp == 20) { // 仅在 hp 等于 20 且音乐未播放时播放
+                if (Mix_PlayMusic(boss_bgm, -1) == -1) { // 播放背景音乐
+                    std::cerr << "Error: Failed to play boss background music! " << Mix_GetError() << std::endl;
+                }
             }
         }
     }
