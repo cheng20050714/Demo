@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人脸识别坐标检测</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            position: relative;
+            margin-top: 20px;
+        }
+        #video {
+            border: 3px solid #ddd;
+            border-radius: 8px;
+            background: #000;
+        }
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .coordinate-info {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+            width: 600px;
+        }
+        .center-line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 1px;
+            height: 100%;
+            background: red;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <h1>人脸中心坐标检测</h1>
+    <p>检测人脸中心点与画面中心的水平偏移量</p>
+    
+    <div class="controls">
+        <button id="startButton">开始检测</button>
+        <button id="stopButton">停止检测</button>
+    </div>
+    
+    <div class="container">
+        <video id="video" width="600" height="450" autoplay muted></video>
+        <canvas id="canvas" width="600" height="450"></canvas>
+        <div class="center-line"></div>
+    </div>
+    
+    <div id="status">准备中...</div>
+    <div id="coordinates" class="coordinate-info">
+        偏移量信息将显示在这里
+    </div>
+
+    <!-- 加载face-api.js库 -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    
+    <script>
+        // 获取DOM元素
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const statusDisplay = document.getElementById('status');
+        const coordinatesDisplay = document.getElementById('coordinates');
+        
+        // 视频尺寸
+        const videoWidth = 600;
+        const videoHeight = 450;
+        // 中心点坐标 (原点)
+        const centerX = videoWidth / 2;
+        const centerY = videoHeight / 2;
+        
+        // 上下文和检测间隔
+        const ctx = canvas.getContext('2d');
+        let detectionInterval;
+        let isDetecting = false;
+        
+        // 自定义蓝色绘制选项
+        const blueDrawOptions = {
+            lineWidth: 2,
+            boxColor: '#0066ff'  // 蓝色
+        };
+        
+        // 加载模型
+        async function loadModels() {
+            statusDisplay.textContent = '正在加载模型...';
+            
+            try {
+                // 只加载人脸检测模型
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                
+                statusDisplay.textContent = '模型加载完成，准备开始检测';
+                startButton.disabled = false;
+            } catch (error) {
+                console.error('加载模型失败:', error);
+                statusDisplay.textContent = '模型加载失败: ' + error.message;
+            }
+        }
+        
+        // 启动摄像头
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: videoWidth, height: videoHeight },
+                    audio: false
+                });
+                video.srcObject = stream;
+                return true;
+            } catch (error) {
+                console.error('摄像头访问失败:', error);
+                statusDisplay.textContent = '摄像头访问失败: ' + error.message;
+                return false;
+            }
+        }
+        
+        // 计算中心点坐标和偏移量
+        function calculateOffsets(detections) {
+            let output = "";
+            
+            detections.forEach((detection, i) => {
+                // 获取检测框坐标
+                const box = detection.box;
+                // 计算人脸中心点坐标
+                const faceCenterX = box.x + box.width / 2;
+                const faceCenterY = box.y + box.height / 2;
+                // 计算相对于画面中心的偏移量
+                const offsetX = faceCenterX - centerX;
+                const offsetY = faceCenterY - centerY;
+                
+                output += `人脸 ${i+1}:<br>`;
+                output += `- 中心点坐标: (${faceCenterX.toFixed(1)}, ${faceCenterY.toFixed(1)})<br>`;
+                output += `- 水平偏移量: ${offsetX.toFixed(1)} 像素 (${offsetX > 0 ? '右' : '左'})<br>`;
+                output += `- 垂直偏移量: ${offsetY.toFixed(1)} 像素 (${offsetY > 0 ? '下' : '上'})<br><br>`;
+            });
+            
+            return output || "未检测到人脸";
+        }
+        
+        // 人脸检测函数
+        async function detectFaces() {
+            if (!isDetecting) return;
+            
+            try {
+                // 使用tinyFaceDetector模型检测人脸
+                const detections = await faceapi.detectAllFaces(
+                    video, 
+                    new faceapi.TinyFaceDetectorOptions()
+                );
+                
+                // 清除画布
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 调整检测结果尺寸以匹配视频尺寸
+                const resizedDetections = faceapi.resizeResults(detections, {
+                    width: video.width,
+                    height: video.height
+                });
+                
+                // 绘制蓝色检测框
+                faceapi.draw.drawDetections(canvas, resizedDetections, blueDrawOptions);
+                
+                // 计算并显示坐标信息
+                coordinatesDisplay.innerHTML = calculateOffsets(resizedDetections);
+                
+                // 显示检测到的人脸数量
+                statusDisplay.textContent = `检测到 ${detections.length} 张人脸`;
+            } catch (error) {
+                console.error('人脸检测错误:', error);
+                statusDisplay.textContent = '检测错误: ' + error.message;
+            }
+        }
+        
+        // 开始检测
+        async function startDetection() {
+            if (isDetecting) return;
+            
+            const videoStarted = await startVideo();
+            if (!videoStarted) return;
+            
+            isDetecting = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            statusDisplay.textContent = '正在检测人脸...';
+            
+            // 每100毫秒检测一次
+            detectionInterval = setInterval(detectFaces, 100);
+        }
+        
+        // 停止检测
+        function stopDetection() {
+            isDetecting = false;
+            clearInterval(detectionInterval);
+            
+            // 停止视频流
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            statusDisplay.textContent = '检测已停止';
+            coordinatesDisplay.textContent = '检测已停止';
+        }
+        
+        // 事件监听
+        startButton.addEventListener('click', startDetection);
+        stopButton.addEventListener('click', stopDetection);
+        
+        // 初始化
+        startButton.disabled = true;
+        stopButton.disabled = true;
+        
+        // 页面加载完成后加载模型
+        window.addEventListener('load', () => {
+            loadModels();
+        });
+    </script>
+</body>
+</html>

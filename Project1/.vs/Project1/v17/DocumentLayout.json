@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\boss_1.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\boss_1.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\boss_2.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\boss_2.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|solutionrelative:Demo\\main.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{1BD714F4-9798-4B24-80A7-2F24A8D4584E}|Demo\\Demo.vcxproj|C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\boss_3.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -70,7 +70,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 9,
+          "SelectedChildIndex": 13,
           "Children": [
             {
               "$type": "Document",
@@ -84,10 +84,6 @@
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
               "WhenOpened": "2025-03-01T11:53:24.142Z",
               "IsPinned": true
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
             },
             {
               "$type": "Bookmark",
@@ -119,7 +115,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "boss_2.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\boss_2.h",
               "RelativeDocumentMoniker": "Demo\\boss_2.h",
@@ -143,7 +139,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "boss_1.h",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\boss_1.h",
               "RelativeDocumentMoniker": "Demo\\boss_1.h",
@@ -151,8 +147,7 @@
               "RelativeToolTip": "Demo\\boss_1.h",
               "ViewState": "AgIAAAkAAAAAAAAAAAAAAAsAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2025-04-10T11:45:07.725Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-04-10T11:45:07.725Z"
             },
             {
               "$type": "Document",
@@ -204,15 +199,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
               "Title": "main.cpp",
               "DocumentMoniker": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\main.cpp",
               "RelativeDocumentMoniker": "Demo\\main.cpp",
               "ToolTip": "C:\\Users\\c\\Desktop\\project\\SDL\\Project1\\Demo\\main.cpp",
               "RelativeToolTip": "Demo\\main.cpp",
-              "ViewState": "AgIAAM8CAAAAAAAAAAAYwOACAAAWAAAAAAAAAA==",
+              "ViewState": "AgIAAKICAAAAAAAAAAAYwLMCAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-03-01T03:51:50.263Z"
+              "WhenOpened": "2025-03-01T03:51:50.263Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
