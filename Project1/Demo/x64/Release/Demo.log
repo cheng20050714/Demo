@@ -1,1 +1,8 @@
-﻿  Demo.vcxproj -> C:\Users\c\Desktop\project\SDL\Project1\x64\Release\Demo.exe
+﻿  main.cpp
+  正在生成代码
+  2 of 519 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  已完成代码的生成
+boss_1.obj : warning LNK4099: 未找到 PDB“”(使用“boss_1.obj”或在“”中寻找)；正在链接对象，如同没有调试信息一样
+  Demo.vcxproj -> C:\Users\c\Desktop\project\SDL\Project1\x64\Release\Demo.exe
